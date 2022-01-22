@@ -57,8 +57,38 @@ def room_to_rgb(room, room_structure=None):
     return room_rgb
 
 
-def room_to_tiny_world_rgb(room, room_structure=None, scale=1):
+def room_to_tiny_world_black_white(room, room_structure=None, scale=1):
+    room = np.array(room)
+    if not room_structure is None:
+        # Change the ID of a player on a target
+        room[(room == 5) & (room_structure == 2)] = 6
 
+    wall = 0
+    floor = 1 / 6
+    box_target = 2 / 6
+    box_on_target = 3 / 6
+    box = 4 / 6
+    player = 5 / 6
+    player_on_target = 1
+
+    surfaces = [wall, floor, box_target, box_on_target, box, player, player_on_target]
+
+    # Assemble the new rgb_room, with all loaded images
+    # FIXME: use color_channel
+    room_small_rgb = np.zeros(shape=(room.shape[0] * scale, room.shape[1] * scale, 3), dtype=np.float32)
+    # room_small_rgb = np.zeros(shape=(room.shape[0] * scale, room.shape[1] * scale), dtype=np.uint8)
+    for i in range(room.shape[0]):
+        x_i = i * scale
+        for j in range(room.shape[1]):
+            y_j = j * scale
+            surfaces_id = int(room[i, j])
+            room_small_rgb[x_i:(x_i + scale), y_j:(y_j + scale), :] = np.array(surfaces[surfaces_id])
+            # room_small_rgb[x_i:(x_i + scale), y_j:(y_j + scale)] = np.array(surfaces[surfaces_id])
+
+    return room_small_rgb
+
+
+def room_to_tiny_world_rgb(room, room_structure=None, scale=1):
     room = np.array(room)
     if not room_structure is None:
         # Change the ID of a player on a target
@@ -75,13 +105,13 @@ def room_to_tiny_world_rgb(room, room_structure=None, scale=1):
     surfaces = [wall, floor, box_target, box_on_target, box, player, player_on_target]
 
     # Assemble the new rgb_room, with all loaded images
-    room_small_rgb = np.zeros(shape=(room.shape[0]*scale, room.shape[1]*scale, 3), dtype=np.uint8)
+    room_small_rgb = np.zeros(shape=(room.shape[0] * scale, room.shape[1] * scale, 3), dtype=np.uint8)
     for i in range(room.shape[0]):
         x_i = i * scale
         for j in range(room.shape[1]):
             y_j = j * scale
             surfaces_id = int(room[i, j])
-            room_small_rgb[x_i:(x_i+scale), y_j:(y_j+scale), :] = np.array(surfaces[surfaces_id])
+            room_small_rgb[x_i:(x_i + scale), y_j:(y_j + scale), :] = np.array(surfaces[surfaces_id])
 
     return room_small_rgb
 
@@ -149,7 +179,7 @@ def room_to_rgb_FT(room, box_mapping, room_structure=None):
 def get_proper_box_surface(surfaces_id, box_mapping, i, j):
     # not used, kept for documentation
     # names = ["wall", "floor", "box_target", "box_on_target", "box", "player", "player_on_target"]
-    
+
     box_id = 0
     situation = ''
 
@@ -176,42 +206,41 @@ def get_proper_box_surface(surfaces_id, box_mapping, i, j):
 
 
 def room_to_tiny_world_rgb_FT(room, box_mapping, room_structure=None, scale=1):
-        room = np.array(room)
-        if not room_structure is None:
-            # Change the ID of a player on a target
-            room[(room == 5) & (room_structure == 2)] = 6
+    room = np.array(room)
+    if not room_structure is None:
+        # Change the ID of a player on a target
+        room[(room == 5) & (room_structure == 2)] = 6
 
-        wall = [0, 0, 0]
-        floor = [243, 248, 238]
-        box_target = [254, 126, 125]
-        box_on_target = [254, 95, 56]
-        box = [142, 121, 56]
-        player = [160, 212, 56]
-        player_on_target = [219, 212, 56]
+    wall = [0, 0, 0]
+    floor = [243, 248, 238]
+    box_target = [254, 126, 125]
+    box_on_target = [254, 95, 56]
+    box = [142, 121, 56]
+    player = [160, 212, 56]
+    player_on_target = [219, 212, 56]
 
-        surfaces = [wall, floor, box_target, box_on_target, box, player, player_on_target]
+    surfaces = [wall, floor, box_target, box_on_target, box, player, player_on_target]
 
-        # Assemble the new rgb_room, with all loaded images
-        room_small_rgb = np.zeros(shape=(room.shape[0] * scale, room.shape[1] * scale, 3), dtype=np.uint8)
-        for i in range(room.shape[0]):
-            x_i = i * scale
-            for j in range(room.shape[1]):
-                y_j = j * scale
+    # Assemble the new rgb_room, with all loaded images
+    room_small_rgb = np.zeros(shape=(room.shape[0] * scale, room.shape[1] * scale, 3), dtype=np.uint8)
+    for i in range(room.shape[0]):
+        x_i = i * scale
+        for j in range(room.shape[1]):
+            y_j = j * scale
 
-                surfaces_id = int(room[i, j])
-                surface = np.array(surfaces[surfaces_id])
-                if 1 < surfaces_id < 5:
-                    try:
-                        surface = get_proper_tiny_box_surface(surfaces_id, box_mapping, i, j)
-                    except:
-                        pass
-                room_small_rgb[x_i:(x_i + scale), y_j:(y_j + scale), :] = surface
+            surfaces_id = int(room[i, j])
+            surface = np.array(surfaces[surfaces_id])
+            if 1 < surfaces_id < 5:
+                try:
+                    surface = get_proper_tiny_box_surface(surfaces_id, box_mapping, i, j)
+                except:
+                    pass
+            room_small_rgb[x_i:(x_i + scale), y_j:(y_j + scale), :] = surface
 
-        return room_small_rgb
+    return room_small_rgb
 
 
 def get_proper_tiny_box_surface(surfaces_id, box_mapping, i, j):
-
     box_id = 0
     situation = 'box'
 
@@ -277,11 +306,13 @@ def get_proper_tiny_box_surface(surfaces_id, box_mapping, i, j):
 def color_player_two(room_rgb, position, room_structure):
     resource_package = __name__
 
-    player_filename = pkg_resources.resource_filename(resource_package, '/'.join(('surface', 'multiplayer', 'player1.png')))
+    player_filename = pkg_resources.resource_filename(resource_package,
+                                                      '/'.join(('surface', 'multiplayer', 'player1.png')))
     player = imageio.imread(player_filename)
 
     player_on_target_filename = pkg_resources.resource_filename(resource_package,
-                                                                '/'.join(('surface', 'multiplayer', 'player1_on_target.png')))
+                                                                '/'.join(('surface', 'multiplayer',
+                                                                          'player1_on_target.png')))
     player_on_target = imageio.imread(player_on_target_filename)
 
     x_i = position[0] * 16
@@ -296,8 +327,7 @@ def color_player_two(room_rgb, position, room_structure):
     return room_rgb
 
 
-def color_tiny_player_two(room_rgb, position, room_structure, scale = 4):
-
+def color_tiny_player_two(room_rgb, position, room_structure, scale=4):
     x_i = position[0] * scale
     y_j = position[1] * scale
 
