@@ -18,16 +18,18 @@ class BoxobanEnv(SokobanEnv):
              max_steps=120,
              difficulty='unfiltered',
              split='train',
+             cache_root=None,
              **kwargs
             ):
         self.difficulty = difficulty
         self.split = split
         self.verbose = False
+        self.cache_root = cache_root
         super(BoxobanEnv, self).__init__(max_steps=max_steps, **kwargs)
         
 
     def reset(self):
-        self.cache_path = '.sokoban_cache'
+        self.cache_path = os.path.join(self.cache_root, '.sokoban_cache')
         self.train_data_dir = os.path.join(self.cache_path, 'boxoban-levels-master', self.difficulty, self.split)
 
         if not os.path.exists(self.cache_path):
