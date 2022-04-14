@@ -17,15 +17,16 @@ class SokobanEnv(gym.Env):
                  max_steps=120,
                  num_boxes=4,
                  num_gen_steps=None,
-                 reset=True,
-                 penalty_for_step=-0.1,
+                 reset=False,
+                 penalty_for_step=-1,
                  penalty_box_off_target=-1,
                  reward_box_on_target=1,
                  reward_finished=10,
                  reward_last=0,
                  render=True,
                  render_mode="rgb_array",
-                 action_size=9
+                 action_size=9,
+                 seed=None
                  ):
 
         # General Configuration
@@ -66,6 +67,8 @@ class SokobanEnv(gym.Env):
             ),
             dtype=np.float32)
 
+        if seed is not None:
+            self.seed(seed)
         if reset:
             # Initialize Room
             _ = self.reset(observation_mode=self.render_mode)
@@ -106,7 +109,6 @@ class SokobanEnv(gym.Env):
             "action.name": ACTION_LOOKUP[action],
             "action.moved_player": moved_player,
             "action.moved_box": moved_box,
-            "last_r": self.reward_last
         }
         if done:
             info["maxsteps_used"] = self._check_if_maxsteps()

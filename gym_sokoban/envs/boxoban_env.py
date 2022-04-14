@@ -1,5 +1,5 @@
 from .sokoban_env import SokobanEnv
-from .render_utils import room_to_rgb
+from .render_utils import room_to_rgb, room_to_tiny_world_black_white
 import os
 from os import listdir
 from os.path import isfile, join
@@ -10,16 +10,20 @@ import random
 import numpy as np
 
 class BoxobanEnv(SokobanEnv):
-    num_boxes = 4
-    dim_room=(10, 10)
-
+    # num_boxes = 4
+    # dim_room=(10, 10)
+    # num_boxes = 2
+    # dim_room = (7, 7)
     def __init__(self,
              max_steps=120,
-             difficulty='unfiltered', split='train'):
+             difficulty='unfiltered',
+             split='train',
+             **kwargs
+            ):
         self.difficulty = difficulty
         self.split = split
         self.verbose = False
-        super(BoxobanEnv, self).__init__(self.dim_room, max_steps, self.num_boxes, None)
+        super(BoxobanEnv, self).__init__(max_steps=max_steps, **kwargs)
         
 
     def reset(self):
@@ -55,8 +59,8 @@ class BoxobanEnv(SokobanEnv):
         self.reward_last = 0
         self.boxes_on_target = 0
 
-        starting_observation = room_to_rgb(self.room_state, self.room_fixed)
-
+        # starting_observation = room_to_rgb(self.room_state, self.room_fixed)
+        starting_observation = room_to_tiny_world_black_white(self.room_state, self.room_fixed)
         return starting_observation
 
     def select_room(self):
