@@ -3,6 +3,8 @@ import pkg_resources
 import imageio
 
 
+
+
 def room_to_rgb(room, room_structure=None):
     """
     Creates an RGB image of the room.

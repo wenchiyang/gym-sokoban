@@ -91,6 +91,7 @@ class BoxobanEnv(SokobanEnv):
         self.room_fixed, self.room_state, self.box_mapping = self.generate_room(selected_map)
 
 
+
     def generate_room(self, select_map):
         room_fixed = []
         room_state = []

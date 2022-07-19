@@ -5,11 +5,11 @@ from gym.spaces import Box
 from .room_utils import generate_room
 from .render_utils import room_to_rgb, room_to_tiny_world_rgb, room_to_tiny_world_black_white
 import numpy as np
-
+import math
 
 class SokobanEnv(gym.Env):
     metadata = {
-        'render.modes': ['human', 'rgb_array', 'tiny_human', 'tiny_rgb_array', 'raw']
+        'render.modes': ['human', 'rgb_array', 'tiny_human', 'tiny_rgb_array', 'raw', 'tinygrid']
     }
 
     def __init__(self,
@@ -26,7 +26,10 @@ class SokobanEnv(gym.Env):
                  render=True,
                  render_mode="rgb_array",
                  action_size=9,
-                 seed=None
+                 seed=None,
+                 height=None,
+                 width=None,
+                 downsampling_size=None
                  ):
 
         # General Configuration
@@ -57,15 +60,26 @@ class SokobanEnv(gym.Env):
         self.grid_height = dim_room[0]
         self.grid_weight = dim_room[1]
         self.color_channels = 3
-        self.observation_space = Box(
-            low=0,
-            high=1,
-            shape=(
-                self.grid_height * self.grid_size,
-                self.grid_weight * self.grid_size,
-                self.color_channels
-            ),
-            dtype=np.float32)
+        self.height, self.width, self.downsampling_size = height, width, downsampling_size
+
+        if self.render_mode == "tinygrid":
+            self.observation_space = Box(
+                low=0,
+                high=1,
+                shape=(
+                    self.grid_height * self.grid_size,
+                    self.grid_weight * self.grid_size
+                ),
+                dtype=np.float32)
+        else:
+            reduced_dim = math.ceil(self.height / self.downsampling_size)
+            self.observation_space = Box(
+                low=0,
+                high=1,
+                shape=(
+                    reduced_dim, reduced_dim
+                )
+            )
 
         if seed is not None:
             self.seed(seed)
@@ -254,6 +268,9 @@ class SokobanEnv(gym.Env):
         if 'rgb_array' in mode:
             return img
 
+        elif 'tiny_rgb_array' in mode:
+            return img
+
         elif 'human' in mode:
             from gym.envs.classic_control import rendering
             if self.viewer is None:
@@ -268,7 +285,6 @@ class SokobanEnv(gym.Env):
             arr_player = (self.room_state == 5).view(np.int8)
 
             return arr_walls, arr_goals, arr_boxes, arr_player
-
         else:
             super(SokobanEnv, self).render(mode=mode)  # just raise an exception
 
