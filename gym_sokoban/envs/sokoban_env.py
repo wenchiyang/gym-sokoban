@@ -3,13 +3,15 @@ from gym.utils import seeding
 from gym.spaces.discrete import Discrete
 from gym.spaces import Box
 from .room_utils import generate_room
-from .render_utils import room_to_rgb, room_to_tiny_world_rgb, room_to_tiny_world_black_white
+from .render_utils import room_to_rgb, room_to_tiny_world_rgb, room_to_tiny_world_black_white, room_to_gray
 import numpy as np
 import math
+from skimage.measure import block_reduce
+import matplotlib.pyplot as plt
 
 class SokobanEnv(gym.Env):
     metadata = {
-        'render.modes': ['human', 'rgb_array', 'tiny_human', 'tiny_rgb_array', 'raw', 'tinygrid']
+        'render.modes': ['human', 'rgb_array', 'tiny_human', 'tiny_rgb_array', 'raw', 'gray_array']
     }
 
     def __init__(self,
@@ -62,7 +64,7 @@ class SokobanEnv(gym.Env):
         self.color_channels = 3
         self.height, self.width, self.downsampling_size = height, width, downsampling_size
 
-        if self.render_mode == "tinygrid":
+        if self.render_mode == "tiny_rgb_array":
             self.observation_space = Box(
                 low=0,
                 high=1,
@@ -71,7 +73,16 @@ class SokobanEnv(gym.Env):
                     self.grid_weight * self.grid_size
                 ),
                 dtype=np.float32)
-        else:
+        elif self.render_mode == 'rgb_array':
+            reduced_dim = math.ceil(self.height / self.downsampling_size)
+            self.observation_space = Box(
+                low=0,
+                high=1,
+                shape=(
+                    reduced_dim, reduced_dim, self.color_channels
+                )
+            )
+        elif self.render_mode == 'gray_array':
             reduced_dim = math.ceil(self.height / self.downsampling_size)
             self.observation_space = Box(
                 low=0,
@@ -91,9 +102,9 @@ class SokobanEnv(gym.Env):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
-    def step(self, action, observation_mode='tiny_rgb_array'):
+    def step(self, action, observation_mode='gray_array'):
         assert action in ACTION_LOOKUP
-        assert observation_mode in ['rgb_array', 'tiny_rgb_array', 'raw']
+        assert observation_mode in ['rgb_array', 'tiny_rgb_array', 'raw', 'gray_array']
 
         self.num_env_steps += 1
 
@@ -237,7 +248,7 @@ class SokobanEnv(gym.Env):
     def _check_if_maxsteps(self):
         return (self.max_steps == self.num_env_steps)
 
-    def reset(self, second_player=False, observation_mode='tiny_rgb_array'):
+    def reset(self, second_player=False, observation_mode='rgb_array'):
         try:
             self.room_fixed, self.room_state, self.box_mapping = generate_room(
                 dim=self.dim_room,
@@ -262,13 +273,14 @@ class SokobanEnv(gym.Env):
         # if not self.render_or_not and not render:
         #     return
         assert mode in RENDERING_MODES
-
         img = self.get_image(mode, scale)
 
         if 'rgb_array' in mode:
             return img
 
         elif 'tiny_rgb_array' in mode:
+            return img
+        elif 'gray_array' in mode:
             return img
 
         elif 'human' in mode:
@@ -288,12 +300,27 @@ class SokobanEnv(gym.Env):
         else:
             super(SokobanEnv, self).render(mode=mode)  # just raise an exception
 
+    def downsampling(self, x):
+        dz = block_reduce(x, block_size=(self.downsampling_size, self.downsampling_size), func=np.mean)
+        # plt.imshow(dz, cmap="gray", vmin=-1, vmax=1)
+        # plt.show()
+        return dz
+
     def get_image(self, mode, scale=1):
-        if mode.startswith('tiny_'):
-            # img = room_to_tiny_world_rgb(self.room_state, self.room_fixed, scale=scale)
-            img = room_to_tiny_world_black_white(self.room_state, self.room_fixed, scale=scale)
+
+        if mode == 'tiny_rgb_array':
+            img = room_to_tiny_world_black_white(self.room_state, self.room_fixed)
+        elif mode == 'gray_array':
+            img = room_to_gray(self.room_state, self.room_fixed)
+            img = self.downsampling(img)
         else:
             img = room_to_rgb(self.room_state, self.room_fixed)
+
+        # if mode.startswith('tiny_'):
+        #     # img = room_to_tiny_world_rgb(self.room_state, self.room_fixed, scale=scale)
+        #     img = room_to_tiny_world_black_white(self.room_state, self.room_fixed, scale=scale)
+        # else:
+        #     img = room_to_rgb(self.room_state, self.room_fixed)
 
         return img
 
@@ -335,4 +362,4 @@ CHANGE_COORDINATES = {
     3: (0, 1)
 }
 
-RENDERING_MODES = ['rgb_array', 'human', 'tiny_rgb_array', 'tiny_human', 'raw']
+RENDERING_MODES = ['rgb_array', 'human', 'tiny_rgb_array', 'tiny_human', 'raw', 'gray_array']

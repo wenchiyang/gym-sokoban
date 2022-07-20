@@ -1,9 +1,22 @@
 import numpy as np
 import pkg_resources
 import imageio
+import torch as th
+
+
+def rgb2gray(rgb, norm=True):
+    # rgb image -> gray [-1, 1]
+    gray = np.dot(rgb[..., :], [0.299, 0.587, 0.114])
+    if norm:
+        gray = gray / 128. - 1.
+    return th.tensor(gray,dtype=th.float32)
 
 
 
+def room_to_gray(room, room_structure=None):
+    rgb = room_to_rgb(room, room_structure=None)
+    gray = rgb2gray(rgb)
+    return gray
 
 def room_to_rgb(room, room_structure=None):
     """
@@ -77,14 +90,14 @@ def room_to_tiny_world_black_white(room, room_structure=None, scale=1):
 
     # Assemble the new rgb_room, with all loaded images
     # FIXME: use color_channel
-    room_small_rgb = np.zeros(shape=(room.shape[0] * scale, room.shape[1] * scale, 3), dtype=np.float32)
+    room_small_rgb = np.zeros(shape=(room.shape[0] * scale, room.shape[1] * scale), dtype=np.float32)
     # room_small_rgb = np.zeros(shape=(room.shape[0] * scale, room.shape[1] * scale), dtype=np.uint8)
     for i in range(room.shape[0]):
         x_i = i * scale
         for j in range(room.shape[1]):
             y_j = j * scale
             surfaces_id = int(room[i, j])
-            room_small_rgb[x_i:(x_i + scale), y_j:(y_j + scale), :] = np.array(surfaces[surfaces_id])
+            room_small_rgb[x_i:(x_i + scale), y_j:(y_j + scale)] = np.array(surfaces[surfaces_id])
             # room_small_rgb[x_i:(x_i + scale), y_j:(y_j + scale)] = np.array(surfaces[surfaces_id])
 
     return room_small_rgb

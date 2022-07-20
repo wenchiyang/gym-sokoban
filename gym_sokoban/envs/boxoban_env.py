@@ -9,6 +9,8 @@ from tqdm import tqdm
 import random
 import numpy as np
 
+
+
 class BoxobanEnv(SokobanEnv):
     # num_boxes = 4
     # dim_room=(10, 10)
@@ -28,7 +30,7 @@ class BoxobanEnv(SokobanEnv):
         super(BoxobanEnv, self).__init__(max_steps=max_steps, **kwargs)
         
 
-    def reset(self):
+    def reset(self, observation_mode=None):
         self.cache_path = os.path.join(self.cache_root, '.sokoban_cache')
         self.train_data_dir = os.path.join(self.cache_path, 'boxoban-levels-master', self.difficulty, self.split)
 
@@ -61,12 +63,16 @@ class BoxobanEnv(SokobanEnv):
         self.reward_last = 0
         self.boxes_on_target = 0
 
-        # starting_observation = room_to_rgb(self.room_state, self.room_fixed)
-        starting_observation = room_to_tiny_world_black_white(self.room_state, self.room_fixed)
+        if observation_mode is None:
+            observation_mode = self.render_mode
+
+        starting_observation = self.render(mode=observation_mode)
         return starting_observation
 
+
+
+
     def select_room(self):
-        
         generated_files = [f for f in listdir(self.train_data_dir) if isfile(join(self.train_data_dir, f))]
         source_file = join(self.train_data_dir, random.choice(generated_files))
 
