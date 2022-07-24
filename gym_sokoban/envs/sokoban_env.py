@@ -102,7 +102,8 @@ class SokobanEnv(gym.Env):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
-    def step(self, action, observation_mode='gray_array'):
+    def step(self, action, observation_mode=None):
+        observation_mode = self.render_mode
         assert action in ACTION_LOOKUP
         assert observation_mode in ['rgb_array', 'tiny_rgb_array', 'raw', 'gray_array']
 
