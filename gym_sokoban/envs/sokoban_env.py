@@ -139,6 +139,7 @@ class SokobanEnv(gym.Env):
         if done:
             info["maxsteps_used"] = self._check_if_maxsteps()
             info["all_boxes_on_target"] = self._check_if_all_boxes_on_target()
+            info["box_at_corner"] = self._box_at_corner()
 
         return observation, self.reward_last, done, info
 
@@ -248,6 +249,33 @@ class SokobanEnv(gym.Env):
 
     def _check_if_maxsteps(self):
         return (self.max_steps == self.num_env_steps)
+
+    def _box_at_corner(self):
+        centers = (self.room_state == 4).nonzero()
+        centers = list(zip(centers[0], centers[1]))
+        if len(centers) == 0:
+            return False
+        corners = np.array([
+            [1, 0, 1, 0], [1, 1, 1, 0], [1, 0, 1, 1], [1, 1, 1, 1], # up, left
+            [1, 0, 0, 1], [1, 1, 0, 1], # up, right
+            [0, 1, 1, 0], [0, 1, 1, 1], # down, left
+            [0, 1, 0, 1] # down, right
+        ])
+        for r, c in centers:
+            neighbors = np.stack(
+                (
+                    self.room_state[r - 1, c],
+                    self.room_state[r + 1, c],
+                    self.room_state[r, c - 1],
+                    self.room_state[r, c + 1]
+                )
+            )
+            neighbors_are_obstables = (neighbors == 0) | (neighbors == 4) | (neighbors == 3)
+
+            if np.any(np.all(neighbors_are_obstables == corners, axis=1)):
+                return True
+
+        return False
 
     def reset(self, second_player=False, observation_mode='rgb_array'):
         try:
