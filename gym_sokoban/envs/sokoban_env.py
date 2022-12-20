@@ -251,6 +251,20 @@ class SokobanEnv(gym.Env):
         return (self.max_steps == self.num_env_steps)
 
     def _box_at_corner(self):
+        """This function assumes there are two boxes"""
+        centers = (self.room_state == 4).nonzero()
+        centers = list(zip(centers[0], centers[1]))
+        # both boxes are in the targets
+        if len(centers) == 0:
+            return False
+        # One box is in a real corner
+        if self._box_at_corner1():
+            return True
+        # Both boxes are in a corner
+        return self._box_at_corner2()
+
+    def _box_at_corner1(self):
+        """ Either box is in a real corner"""
         centers = (self.room_state == 4).nonzero()
         centers = list(zip(centers[0], centers[1]))
         if len(centers) == 0:
@@ -270,12 +284,43 @@ class SokobanEnv(gym.Env):
                     self.room_state[r, c + 1]
                 )
             )
-            neighbors_are_obstables = (neighbors == 0) | (neighbors == 4) | (neighbors == 3)
+            neighbors_are_obstables = (neighbors == 0)
 
             if np.any(np.all(neighbors_are_obstables == corners, axis=1)):
                 return True
-
         return False
+
+    def _box_at_corner2(self):
+        """ Both boxes are in a corner"""
+        centers1 = (self.room_state == 3).nonzero()
+        centers2 = (self.room_state == 4).nonzero()
+        centers1 = list(zip(centers1[0], centers1[1]))
+        centers2 = list(zip(centers2[0], centers2[1]))
+        centers = centers1 + centers2
+        assert (len(centers) == 2)
+
+        corners = np.array([
+            [1, 0, 1, 0], [1, 1, 1, 0], [1, 0, 1, 1], [1, 1, 1, 1], # up, left
+            [1, 0, 0, 1], [1, 1, 0, 1], # up, right
+            [0, 1, 1, 0], [0, 1, 1, 1], # down, left
+            [0, 1, 0, 1] # down, right
+        ])
+
+        n_stuck=0
+        for r, c in centers:
+            neighbors = np.stack(
+                (
+                    self.room_state[r - 1, c],
+                    self.room_state[r + 1, c],
+                    self.room_state[r, c - 1],
+                    self.room_state[r, c + 1]
+                )
+            )
+            neighbors_are_obstables = (neighbors == 0)| (neighbors == 4) | (neighbors == 3)
+
+            if np.any(np.all(neighbors_are_obstables == corners, axis=1)):
+                n_stuck += 1
+        return n_stuck == 2
 
     def reset(self, second_player=False, observation_mode='rgb_array'):
         try:
@@ -344,6 +389,14 @@ class SokobanEnv(gym.Env):
             img = self.downsampling(img)
         else:
             img = room_to_rgb(self.room_state, self.room_fixed)
+
+        # fig = plt.figure(frameon=False)
+        # fig.set_size_inches(1.6, 1.6)
+        # ax = plt.Axes(fig, [0., 0., 1., 1.])
+        # ax.set_axis_off()
+        # fig.add_axes(ax)
+        # ax.imshow(img)
+        # fig.savefig("Sokoban.png")
 
         # if mode.startswith('tiny_'):
         #     # img = room_to_tiny_world_rgb(self.room_state, self.room_fixed, scale=scale)
